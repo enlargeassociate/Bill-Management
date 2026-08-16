@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import {
   ArrowUpDown,
   CheckCircle2,
-  Eye,
   FileText,
   MoreHorizontal,
   Pencil,
@@ -60,6 +59,7 @@ export function BillTable({
   showFilters = true,
   showSearch = true,
   showCompany = true,
+  hideStatusFilter = false,
   emptyTitle = "No bills found.",
   emptyDescription = "Add a bill to start tracking payments.",
   defaultCompanyId,
@@ -69,6 +69,7 @@ export function BillTable({
   showFilters?: boolean;
   showSearch?: boolean;
   showCompany?: boolean;
+  hideStatusFilter?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
   defaultCompanyId?: string | undefined;
@@ -89,6 +90,11 @@ export function BillTable({
   const [editBill, setEditBill] = useState<Bill | null>(null);
   const [completeTarget, setCompleteTarget] = useState<Bill | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Bill | null>(null);
+
+  // Always use the latest bill data from props for the complete modal
+  const latestCompleteTarget = completeTarget
+    ? bills.find((b) => b.id === completeTarget.id) ?? completeTarget
+    : null;
 
   const companyName = (id: string) => companies.find((c) => c.id === id)?.name ?? "-";
 
@@ -179,6 +185,7 @@ export function BillTable({
                 setPage(1);
               }}
               companies={companies}
+              hideStatusFilter={hideStatusFilter}
             />
           ) : null}
         </div>
@@ -291,11 +298,6 @@ export function BillTable({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link to="/bills/$id" params={{ id: bill.id }}>
-                                <Eye className="mr-2 h-4 w-4" /> View
-                              </Link>
-                            </DropdownMenuItem>
                             {canEditBill(user) && bill.status === "PENDING" ? (
                               <DropdownMenuItem onClick={() => setEditBill(bill)}>
                                 <Pencil className="mr-2 h-4 w-4" /> Edit
@@ -343,7 +345,7 @@ export function BillTable({
         defaultCompanyId={defaultCompanyId}
       />
       <CompleteBillModal
-        bill={completeTarget}
+        bill={latestCompleteTarget}
         open={!!completeTarget}
         onOpenChange={(o) => !o && setCompleteTarget(null)}
       />

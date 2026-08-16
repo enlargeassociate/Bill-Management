@@ -84,15 +84,21 @@ class ApiClient {
     });
   }
 
-  async completeBill(id: string, paymentMethod: string, paidAmount?: number) {
+  async completeBill(id: string, paymentMethod: string, paidAmount?: number, paymentDate?: string) {
     return this.request<BillResponse>(`/bills/${id}/complete`, {
       method: "PATCH",
-      body: JSON.stringify({ paymentMethod, paidAmount }),
+      body: JSON.stringify({ paymentMethod, paidAmount, paymentDate }),
     });
   }
 
   async deleteBill(id: string) {
     return this.request<{ message: string }>(`/bills/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  async deletePayment(billId: string, paymentId: string) {
+    return this.request<BillResponse>(`/bills/${billId}/payments/${paymentId}`, {
       method: "DELETE",
     });
   }
@@ -146,6 +152,7 @@ export interface BillResponse {
   status: "PENDING" | "COMPLETED" | "OVERDUE";
   paymentMethod?: "CASH" | "CHEQUE" | "ONLINE";
   paidAmount?: number;
+  payments?: { _id: string; amount: number; method: "CASH" | "CHEQUE" | "ONLINE"; paidAt: string }[];
   completedAt?: string;
 }
 
@@ -180,6 +187,16 @@ export function mapBill(b: BillResponse): Bill {
     status: b.status === "OVERDUE" ? "PENDING" : b.status,
     ...(b.paymentMethod ? { paymentMethod: b.paymentMethod } : {}),
     ...(b.paidAmount !== undefined ? { paidAmount: b.paidAmount } : {}),
+    ...(b.payments
+      ? {
+          payments: b.payments.map((p) => ({
+            id: p._id,
+            amount: p.amount,
+            method: p.method,
+            paidAt: p.paidAt,
+          })),
+        }
+      : {}),
     ...(b.completedAt ? { completedAt: b.completedAt } : {}),
   };
 }

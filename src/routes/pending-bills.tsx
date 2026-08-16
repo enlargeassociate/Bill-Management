@@ -17,6 +17,7 @@ function PendingBillsPage() {
     <ProtectedPage title="Pending Bills" subtitle="Bills awaiting payment">
       <BillTable
         bills={bills}
+        hideStatusFilter
         emptyTitle="No pending bills."
         emptyDescription="Everything is settled — nice work."
       />

@@ -3,6 +3,13 @@ import mongoose, { Schema, type Document, type Types } from "mongoose";
 export type BillStatus = "PENDING" | "COMPLETED" | "OVERDUE";
 export type PaymentMethod = "CASH" | "CHEQUE" | "ONLINE";
 
+export interface IPaymentEntry {
+  _id?: Types.ObjectId;
+  amount: number;
+  method: PaymentMethod;
+  paidAt: Date;
+}
+
 export interface IBill extends Document {
   companyId: Types.ObjectId;
   invoiceNumber: string;
@@ -11,10 +18,20 @@ export interface IBill extends Document {
   status: BillStatus;
   paymentMethod?: PaymentMethod;
   paidAmount: number;
+  payments: IPaymentEntry[];
   completedAt?: Date;
   overdueNotifiedAt?: Date;
   createdAt: Date;
 }
+
+const paymentEntrySchema = new Schema<IPaymentEntry>(
+  {
+    amount: { type: Number, required: true, min: 0 },
+    method: { type: String, enum: ["CASH", "CHEQUE", "ONLINE"], required: true },
+    paidAt: { type: Date, required: true, default: Date.now },
+  },
+  { _id: true }
+);
 
 const billSchema = new Schema<IBill>(
   {
@@ -25,6 +42,7 @@ const billSchema = new Schema<IBill>(
     status: { type: String, enum: ["PENDING", "COMPLETED", "OVERDUE"], default: "PENDING" },
     paymentMethod: { type: String, enum: ["CASH", "CHEQUE", "ONLINE"] },
     paidAmount: { type: Number, default: 0, min: 0 },
+    payments: { type: [paymentEntrySchema], default: [] },
     completedAt: { type: Date },
     overdueNotifiedAt: { type: Date },
   },

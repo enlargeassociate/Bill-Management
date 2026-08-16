@@ -17,6 +17,13 @@ export interface Company {
 export type BillStatus = "PENDING" | "COMPLETED";
 export type PaymentMethod = "CASH" | "CHEQUE" | "ONLINE";
 
+export interface PaymentEntry {
+  id: string;
+  amount: number;
+  method: PaymentMethod;
+  paidAt: string;
+}
+
 export interface Bill {
   id: string;
   companyId: string;
@@ -27,5 +34,6 @@ export interface Bill {
   status: BillStatus;
   paymentMethod?: PaymentMethod;
   paidAmount?: number;
+  payments?: PaymentEntry[];
   completedAt?: string;
 }

@@ -32,20 +32,22 @@ export const emptyFilters: BillFilterState = {
   dateTo: "",
 };
 
-const activeCount = (f: BillFilterState) =>
-  [f.status !== "ALL", f.companyId !== "ALL", f.paymentMethod !== "ALL", !!f.dateFrom, !!f.dateTo]
+const activeCount = (f: BillFilterState, hideStatus = false) =>
+  [!hideStatus && f.status !== "ALL", f.companyId !== "ALL", f.paymentMethod !== "ALL", !!f.dateFrom, !!f.dateTo]
     .filter(Boolean).length;
 
 export function BillFilters({
   filters,
   onChange,
   companies,
+  hideStatusFilter = false,
 }: {
   filters: BillFilterState;
   onChange: (filters: BillFilterState) => void;
   companies: Company[];
+  hideStatusFilter?: boolean;
 }) {
-  const count = activeCount(filters);
+  const count = activeCount(filters, hideStatusFilter);
   const set = <K extends keyof BillFilterState>(key: K, value: BillFilterState[K]) =>
     onChange({ ...filters, [key]: value });
 
@@ -64,24 +66,26 @@ export function BillFilters({
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[300px] space-y-4">
-          <div className="space-y-1.5">
-            <Label>Status</Label>
-            <Select
-              value={filters.status}
-              onValueChange={(v) => set("status", v as BillFilterState["status"])}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {["ALL", "PENDING", "COMPLETED", "OVERDUE"].map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!hideStatusFilter && (
+            <div className="space-y-1.5">
+              <Label>Status</Label>
+              <Select
+                value={filters.status}
+                onValueChange={(v) => set("status", v as BillFilterState["status"])}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {["ALL", "PENDING", "COMPLETED", "OVERDUE"].map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label>Company</Label>

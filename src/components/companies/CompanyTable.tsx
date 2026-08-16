@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Building2, Eye, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Building2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -119,11 +119,6 @@ export function CompanyTable({ search, companies }: { search: string; companies:
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link to="/companies/$id" params={{ id: company.id }}>
-                                <Eye className="mr-2 h-4 w-4" /> View
-                              </Link>
-                            </DropdownMenuItem>
                             {canEditCompany(user) ? (
                               <DropdownMenuItem onClick={() => setEditTarget(company)}>
                                 <Pencil className="mr-2 h-4 w-4" /> Edit

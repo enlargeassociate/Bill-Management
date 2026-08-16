@@ -8,7 +8,7 @@ const router = Router();
 
 const companySchema = z.object({
   name: z.string().min(1).trim(),
-  phone: z.string().min(10).trim(),
+  phone: z.string().trim().optional().default(""),
 });
 
 // GET /api/companies

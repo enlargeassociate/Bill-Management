@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { format, parse } from "date-fns";
-import { CalendarIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -30,9 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
+import { DateInput } from "@/components/common/DateInput";
 import { useCompanies } from "@/hooks/use-companies";
 import { useCreateBill, useUpdateBill } from "@/hooks/use-bills";
 import { toDateInput } from "@/lib/format";
@@ -61,7 +57,6 @@ export function BillForm({
   const { data: companies = [] } = useCompanies();
   const createBill = useCreateBill();
   const updateBill = useUpdateBill();
-  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -188,42 +183,9 @@ export function BillForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Bill Date *</FormLabel>
-                    <Popover modal={true} open={calendarOpen} onOpenChange={setCalendarOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal h-10",
-                              !field.value && "text-muted-foreground",
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value
-                              ? format(
-                                  parse(field.value, "yyyy-MM-dd", new Date()),
-                                  "dd/MM/yyyy",
-                                )
-                              : "DD/MM/YYYY"}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={
-                            field.value
-                              ? parse(field.value, "yyyy-MM-dd", new Date())
-                              : undefined
-                          }
-                          onSelect={(date) => {
-                            field.onChange(date ? format(date, "yyyy-MM-dd") : "");
-                            setCalendarOpen(false);
-                          }}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <FormControl>
+                      <DateInput value={field.value} onChange={field.onChange} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

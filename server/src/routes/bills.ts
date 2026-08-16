@@ -19,6 +19,7 @@ const billSchema = z.object({
 const completeBillSchema = z.object({
   paymentMethod: z.enum(["CASH", "CHEQUE", "ONLINE"]),
   paidAmount: z.number().positive().optional(),
+  paymentDate: z.string().optional(),
 });
 
 // GET /api/bills
@@ -152,7 +153,7 @@ router.put("/:id", authenticate, requireAdmin, async (req: AuthRequest, res) => 
 // PATCH /api/bills/:id/complete
 router.patch("/:id/complete", authenticate, requireAdmin, async (req: AuthRequest, res) => {
   try {
-    const { paymentMethod, paidAmount } = completeBillSchema.parse(req.body);
+    const { paymentMethod, paidAmount, paymentDate } = completeBillSchema.parse(req.body);
 
     const bill = await Bill.findById(req.params.id);
     if (!bill) {
@@ -170,11 +171,20 @@ router.patch("/:id/complete", authenticate, requireAdmin, async (req: AuthReques
     const nextPaid = Math.min(bill.totalAmount, alreadyPaid + payment);
     const settled = nextPaid >= bill.totalAmount;
 
+    // Add payment entry to history
+    const paidAt = paymentDate ? new Date(paymentDate) : new Date();
+    const paymentEntry = {
+      amount: payment,
+      method: paymentMethod,
+      paidAt,
+    };
+
     const updated = await Bill.findByIdAndUpdate(
       req.params.id,
       {
         paidAmount: nextPaid,
         paymentMethod,
+        $push: { payments: paymentEntry },
         ...(settled
           ? { status: "COMPLETED", completedAt: new Date() }
           : {}),
@@ -207,6 +217,50 @@ router.patch("/:id/complete", authenticate, requireAdmin, async (req: AuthReques
       res.status(400).json({ error: error.errors[0].message });
       return;
     }
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// DELETE /api/bills/:id/payments/:paymentId
+router.delete("/:id/payments/:paymentId", authenticate, requireAdmin, async (req: AuthRequest, res) => {
+  try {
+    const bill = await Bill.findById(req.params.id);
+    if (!bill) {
+      res.status(404).json({ error: "Bill not found" });
+      return;
+    }
+
+    const payment = bill.payments.find(
+      (p) => p._id?.toString() === req.params.paymentId
+    );
+    if (!payment) {
+      res.status(404).json({ error: "Payment not found" });
+      return;
+    }
+
+    // Remove the payment and recalculate paidAmount
+    const newPaidAmount = Math.max(0, bill.paidAmount - payment.amount);
+    const remainingPayments = bill.payments.length - 1;
+
+    const updateData: Record<string, unknown> = {
+      paidAmount: newPaidAmount,
+      $pull: { payments: { _id: req.params.paymentId } },
+    };
+
+    // If no payments remain, clear the paymentMethod
+    if (remainingPayments <= 0) {
+      updateData.paymentMethod = null;
+    }
+
+    // If bill was completed but now has remaining balance, revert to pending
+    if (bill.status === "COMPLETED" && newPaidAmount < bill.totalAmount) {
+      updateData.status = "PENDING";
+      updateData.completedAt = null;
+    }
+
+    const updated = await Bill.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    res.json(updated);
+  } catch {
     res.status(500).json({ error: "Server error" });
   }
 });

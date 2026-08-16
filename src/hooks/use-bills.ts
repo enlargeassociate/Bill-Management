@@ -62,8 +62,8 @@ export function useUpdateBill() {
 export function useCompleteBill() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, paymentMethod, paidAmount }: { id: string; paymentMethod: string; paidAmount?: number }) =>
-      api.completeBill(id, paymentMethod, paidAmount),
+    mutationFn: ({ id, paymentMethod, paidAmount, paymentDate }: { id: string; paymentMethod: string; paidAmount?: number; paymentDate?: string }) =>
+      api.completeBill(id, paymentMethod, paidAmount, paymentDate),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: billKeys.all });
     },
@@ -74,6 +74,17 @@ export function useDeleteBill() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.deleteBill(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: billKeys.all });
+    },
+  });
+}
+
+export function useDeletePayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ billId, paymentId }: { billId: string; paymentId: string }) =>
+      api.deletePayment(billId, paymentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: billKeys.all });
     },

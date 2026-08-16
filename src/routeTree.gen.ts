@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CompletedBillsRouteImport } from './routes/completed-bills'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as OverdueBillsRouteImport } from './routes/overdue-bills'
 import { Route as PendingBillsRouteImport } from './routes/pending-bills'
 import { Route as BillsIndexRouteImport } from './routes/bills.index'
 import { Route as BillsIdRouteImport } from './routes/bills.$id'
@@ -31,6 +32,11 @@ const CompletedBillsRoute = CompletedBillsRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OverdueBillsRoute = OverdueBillsRouteImport.update({
+  id: '/overdue-bills',
+  path: '/overdue-bills',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PendingBillsRoute = PendingBillsRouteImport.update({
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/completed-bills': typeof CompletedBillsRoute
   '/dashboard': typeof DashboardRoute
+  '/overdue-bills': typeof OverdueBillsRoute
   '/pending-bills': typeof PendingBillsRoute
   '/bills/$id': typeof BillsIdRoute
   '/companies/$id': typeof CompaniesIdRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/completed-bills': typeof CompletedBillsRoute
   '/dashboard': typeof DashboardRoute
+  '/overdue-bills': typeof OverdueBillsRoute
   '/pending-bills': typeof PendingBillsRoute
   '/bills/$id': typeof BillsIdRoute
   '/companies/$id': typeof CompaniesIdRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/completed-bills': typeof CompletedBillsRoute
   '/dashboard': typeof DashboardRoute
+  '/overdue-bills': typeof OverdueBillsRoute
   '/pending-bills': typeof PendingBillsRoute
   '/bills/$id': typeof BillsIdRoute
   '/companies/$id': typeof CompaniesIdRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/completed-bills'
     | '/dashboard'
+    | '/overdue-bills'
     | '/pending-bills'
     | '/bills/$id'
     | '/companies/$id'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/completed-bills'
     | '/dashboard'
+    | '/overdue-bills'
     | '/pending-bills'
     | '/bills/$id'
     | '/companies/$id'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/completed-bills'
     | '/dashboard'
+    | '/overdue-bills'
     | '/pending-bills'
     | '/bills/$id'
     | '/companies/$id'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CompletedBillsRoute: typeof CompletedBillsRoute
   DashboardRoute: typeof DashboardRoute
+  OverdueBillsRoute: typeof OverdueBillsRoute
   PendingBillsRoute: typeof PendingBillsRoute
   BillsIdRoute: typeof BillsIdRoute
   CompaniesIdRoute: typeof CompaniesIdRoute
@@ -155,6 +168,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/overdue-bills': {
+      id: '/overdue-bills'
+      path: '/overdue-bills'
+      fullPath: '/overdue-bills'
+      preLoaderRoute: typeof OverdueBillsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pending-bills': {
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CompletedBillsRoute: CompletedBillsRoute,
   DashboardRoute: DashboardRoute,
+  OverdueBillsRoute: OverdueBillsRoute,
   PendingBillsRoute: PendingBillsRoute,
   BillsIdRoute: BillsIdRoute,
   CompaniesIdRoute: CompaniesIdRoute,

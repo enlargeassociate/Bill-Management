@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
+  AlertTriangle,
   Bell,
   Building2,
   CheckCircle2,
@@ -32,6 +33,7 @@ const navItems = [
   { to: "/companies", label: "Companies", icon: Building2 },
   { to: "/bills", label: "Bills", icon: FileText },
   { to: "/pending-bills", label: "Pending Bills", icon: Clock },
+  { to: "/overdue-bills", label: "Overdue Bills", icon: AlertTriangle },
   { to: "/completed-bills", label: "Completed Bills", icon: CheckCircle2 },
 ] as const;
 

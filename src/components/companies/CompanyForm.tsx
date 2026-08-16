@@ -28,8 +28,9 @@ const schema = z.object({
   name: z.string().min(1, "Company name is required"),
   phone: z
     .string()
-    .min(1, "Phone number is required")
-    .regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian phone number"),
+    .regex(/^([6-9]\d{9})?$/, "Enter a valid 10-digit Indian phone number")
+    .optional()
+    .or(z.literal("")),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -110,7 +111,7 @@ export function CompanyForm({
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone Number *</FormLabel>
+                  <FormLabel>Phone Number</FormLabel>
                   <FormControl>
                     <Input inputMode="numeric" maxLength={10} placeholder="9876543210" {...field} />
                   </FormControl>
