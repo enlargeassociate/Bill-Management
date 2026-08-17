@@ -18,7 +18,7 @@ export interface BillFilterState {
   status: "ALL" | "PENDING" | "COMPLETED" | "OVERDUE";
   companyId: string;
   paymentMethod: "ALL" | "CASH" | "CHEQUE" | "ONLINE";
-  dateField: "createdAt" | "billDate";
+  dateField: "billDate";
   dateFrom: string;
   dateTo: string;
 }
@@ -27,7 +27,7 @@ export const emptyFilters: BillFilterState = {
   status: "ALL",
   companyId: "ALL",
   paymentMethod: "ALL",
-  dateField: "createdAt",
+  dateField: "billDate",
   dateFrom: "",
   dateTo: "",
 };
@@ -125,18 +125,6 @@ export function BillFilters({
 
           <div className="space-y-1.5">
             <Label>Date filter</Label>
-            <Select
-              value={filters.dateField}
-              onValueChange={(v) => set("dateField", v as BillFilterState["dateField"])}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="createdAt">Created Date</SelectItem>
-                <SelectItem value="billDate">Bill Date</SelectItem>
-              </SelectContent>
-            </Select>
             <div className="grid grid-cols-2 gap-2 pt-1">
               <Popover>
                 <PopoverTrigger asChild>

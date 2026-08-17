@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as CompletedBillsRouteImport } from './routes/completed-bills'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as OverdueBillsRouteImport } from './routes/overdue-bills'
 import { Route as PendingBillsRouteImport } from './routes/pending-bills'
@@ -22,11 +21,6 @@ import { Route as CompaniesIdRouteImport } from './routes/companies.$id'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CompletedBillsRoute = CompletedBillsRouteImport.update({
-  id: '/completed-bills',
-  path: '/completed-bills',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -67,7 +61,6 @@ const CompaniesIdRoute = CompaniesIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/completed-bills': typeof CompletedBillsRoute
   '/dashboard': typeof DashboardRoute
   '/overdue-bills': typeof OverdueBillsRoute
   '/pending-bills': typeof PendingBillsRoute
@@ -78,7 +71,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/completed-bills': typeof CompletedBillsRoute
   '/dashboard': typeof DashboardRoute
   '/overdue-bills': typeof OverdueBillsRoute
   '/pending-bills': typeof PendingBillsRoute
@@ -90,7 +82,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/completed-bills': typeof CompletedBillsRoute
   '/dashboard': typeof DashboardRoute
   '/overdue-bills': typeof OverdueBillsRoute
   '/pending-bills': typeof PendingBillsRoute
@@ -103,7 +94,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/completed-bills'
     | '/dashboard'
     | '/overdue-bills'
     | '/pending-bills'
@@ -114,7 +104,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/completed-bills'
     | '/dashboard'
     | '/overdue-bills'
     | '/pending-bills'
@@ -125,7 +114,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/completed-bills'
     | '/dashboard'
     | '/overdue-bills'
     | '/pending-bills'
@@ -137,7 +125,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CompletedBillsRoute: typeof CompletedBillsRoute
   DashboardRoute: typeof DashboardRoute
   OverdueBillsRoute: typeof OverdueBillsRoute
   PendingBillsRoute: typeof PendingBillsRoute
@@ -154,13 +141,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/completed-bills': {
-      id: '/completed-bills'
-      path: '/completed-bills'
-      fullPath: '/completed-bills'
-      preLoaderRoute: typeof CompletedBillsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -217,7 +197,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CompletedBillsRoute: CompletedBillsRoute,
   DashboardRoute: DashboardRoute,
   OverdueBillsRoute: OverdueBillsRoute,
   PendingBillsRoute: PendingBillsRoute,

@@ -20,10 +20,10 @@ async function seed() {
   const hashedViewer = await bcrypt.hash("viewer123", 10);
 
   const [admin, viewer] = await User.create([
-    { name: "Anand Mehta", email: "admin@example.com", password: hashedAdmin, role: "ADMIN" },
-    { name: "Riya Shah", email: "viewer@example.com", password: hashedViewer, role: "VIEWER" },
+    { name: "Anand Mehta", username: "admin", password: hashedAdmin, role: "ADMIN" },
+    { name: "Riya Shah", username: "viewer", password: hashedViewer, role: "VIEWER" },
   ]);
-  console.log(`👤 Created users: ${admin.email} (ADMIN), ${viewer.email} (VIEWER)\n`);
+  console.log(`👤 Created users: ${admin.username} (ADMIN), ${viewer.username} (VIEWER)\n`);
 
   // Create companies
   const companiesData = [

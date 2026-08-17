@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Phone, Plus, FileText, Clock, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Phone, Plus, FileText, Clock, AlertTriangle, IndianRupee } from "lucide-react";
 import { ProtectedPage } from "@/components/layout/ProtectedPage";
 import { BillTable } from "@/components/bills/BillTable";
 import { BillForm } from "@/components/bills/BillForm";
@@ -23,26 +23,28 @@ function CompanyDetailPage() {
   const { data: allBills = [], isLoading: billsLoading } = useBills({ companyId: id });
   const user = useAuthStore((s) => s.currentUser);
   const [addOpen, setAddOpen] = useState(false);
+  const isAdmin = user?.role === "ADMIN";
 
   const isLoading = companyLoading || billsLoading;
 
   if (isLoading) return <ProtectedPage title="Company" subtitle="Loading…"><LoadingState /></ProtectedPage>;
 
   const bills = allBills;
-  const pending = bills.filter((b) => b.status === "PENDING");
+  const pending = bills.filter((b) => b.status === "PENDING" && !isOverdue(b));
   const overdueBills = bills.filter(isOverdue);
-  const sum = (rows: typeof bills) => rows.reduce((t, b) => t + b.totalAmount, 0);
+  const pendingAmount = pending.reduce((t, b) => t + remainingAmount(b), 0);
   const overdueAmount = overdueBills.reduce((t, b) => t + remainingAmount(b), 0);
+  const totalOutstanding = pendingAmount + overdueAmount;
 
   return (
     <ProtectedPage title={company?.name ?? "Company"} subtitle="Company details and bill history">
       <div className="space-y-6">
-        <Link
-          to="/companies"
+        <button
+          onClick={() => window.history.back()}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" /> Back to companies
-        </Link>
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
 
         {!company ? (
           <div className="card-surface p-8 text-center text-muted-foreground">
@@ -64,11 +66,11 @@ function CompanyDetailPage() {
               ) : null}
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <StatCard label="Total Bills" value={bills.length} icon={FileText} tone="primary" />
               <StatCard
                 label="Pending Amount"
-                value={formatINR(sum(pending))}
+                value={formatINR(pendingAmount)}
                 icon={Clock}
                 tone="warning"
               />
@@ -76,6 +78,12 @@ function CompanyDetailPage() {
                 label="Overdue Amount"
                 value={formatINR(overdueAmount)}
                 icon={AlertTriangle}
+                tone="warning"
+              />
+              <StatCard
+                label="Total Outstanding"
+                value={formatINR(totalOutstanding)}
+                icon={IndianRupee}
                 tone="warning"
               />
             </div>
@@ -90,7 +98,7 @@ function CompanyDetailPage() {
           </>
         )}
       </div>
-      {company ? (
+      {isAdmin && company ? (
         <BillForm open={addOpen} onOpenChange={setAddOpen} defaultCompanyId={company.id} />
       ) : null}
     </ProtectedPage>

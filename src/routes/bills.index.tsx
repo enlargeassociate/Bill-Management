@@ -19,10 +19,10 @@ function BillsPage() {
   const user = useAuthStore((s) => s.currentUser);
   const { data: bills = [], isLoading } = useBills();
 
-  if (isLoading) return <ProtectedPage title="All Bills" subtitle="Loading…"><LoadingState /></ProtectedPage>;
+  if (isLoading) return <ProtectedPage title="All Bills" subtitle="Loading…" adminOnly><LoadingState /></ProtectedPage>;
 
   return (
-    <ProtectedPage title="All Bills" subtitle="Every bill across all companies">
+    <ProtectedPage title="All Bills" subtitle="Every bill across all companies" adminOnly>
       <div className="space-y-4">
         {canAddBill(user) ? (
           <div className="flex justify-end">

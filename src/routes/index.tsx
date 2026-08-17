@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ReceiptText, ShieldCheck } from "lucide-react";
+import { ReceiptText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,24 +14,28 @@ export const Route = createFileRoute("/")({
 function LoginPage() {
   const navigate = useNavigate();
   const hydrated = useHydrated();
-  const { login, isAuthenticated, isLoading } = useAuthStore();
-  const [email, setEmail] = useState("");
+  const { login, isAuthenticated, isLoading, currentUser } = useAuthStore();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  const getRedirect = () => currentUser?.role === "ADMIN" ? "/dashboard" : "/pending-bills";
+
   useEffect(() => {
-    if (hydrated && isAuthenticated) navigate({ to: "/dashboard" });
-  }, [hydrated, isAuthenticated, navigate]);
+    if (hydrated && isAuthenticated) navigate({ to: getRedirect() });
+  }, [hydrated, isAuthenticated, currentUser, navigate]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    const result = await login(email, password);
+    const result = await login(username, password);
     if (!result.ok) {
       setError(result.error ?? "Login failed.");
       return;
     }
-    navigate({ to: "/dashboard" });
+    // Need to get the user from store after login
+    const user = useAuthStore.getState().currentUser;
+    navigate({ to: user?.role === "ADMIN" ? "/dashboard" : "/pending-bills" });
   };
 
   return (
@@ -41,7 +45,7 @@ function LoginPage() {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary">
             <ReceiptText className="h-5 w-5 text-sidebar-primary-foreground" />
           </div>
-          <span className="font-bold text-sidebar-foreground">BillDesk</span>
+          <span className="font-bold text-sidebar-foreground">Enlarge Associate</span>
         </div>
         <div className="max-w-md space-y-4">
           <h2 className="text-3xl font-bold leading-tight text-sidebar-foreground">
@@ -64,7 +68,7 @@ function LoginPage() {
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
                 <ReceiptText className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="font-bold">BillDesk</span>
+              <span className="font-bold">Enlarge Associate</span>
             </div>
           </div>
 
@@ -75,14 +79,14 @@ function LoginPage() {
 
           <form onSubmit={submit} className="mt-6 space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="username">Username</Label>
               <Input
-                id="email"
-                type="email"
+                id="username"
+                type="text"
                 autoComplete="username"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter your username"
               />
             </div>
             <div className="space-y-1.5">
@@ -103,29 +107,6 @@ function LoginPage() {
               {isLoading ? "Signing in…" : "Sign in"}
             </Button>
           </form>
-
-          <div className="mt-6 space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Quick fill
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail("dharmik@gmail.com");
-                setPassword("Vaishvi@05");
-                setError("");
-              }}
-              className="flex w-full items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5 text-left transition-colors hover:bg-muted"
-            >
-              <ShieldCheck className="h-4 w-4 text-primary" />
-              <span className="text-sm">
-                <span className="block font-medium">Admin — full access</span>
-                <span className="block text-xs text-muted-foreground">
-                  dharmik@gmail.com
-                </span>
-              </span>
-            </button>
-          </div>
         </div>
       </div>
     </div>

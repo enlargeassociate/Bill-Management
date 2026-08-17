@@ -9,18 +9,24 @@ export function ProtectedPage({
   title,
   subtitle,
   children,
+  adminOnly = false,
 }: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
+  adminOnly?: boolean;
 }) {
   const hydrated = useHydrated();
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const currentUser = useAuthStore((s) => s.currentUser);
 
   useEffect(() => {
     if (hydrated && !isAuthenticated) navigate({ to: "/" });
-  }, [hydrated, isAuthenticated, navigate]);
+    if (hydrated && isAuthenticated && adminOnly && currentUser?.role !== "ADMIN") {
+      navigate({ to: "/pending-bills" });
+    }
+  }, [hydrated, isAuthenticated, adminOnly, currentUser, navigate]);
 
   if (!hydrated || !isAuthenticated) {
     return (
@@ -28,6 +34,10 @@ export function ProtectedPage({
         <LoadingState rows={6} />
       </div>
     );
+  }
+
+  if (adminOnly && currentUser?.role !== "ADMIN") {
+    return null;
   }
 
   return (

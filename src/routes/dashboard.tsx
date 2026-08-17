@@ -22,7 +22,7 @@ export const Route = createFileRoute("/dashboard")({
 function DashboardPage() {
   const { data: bills = [], isLoading } = useBills();
 
-  if (isLoading) return <ProtectedPage title="Dashboard" subtitle="Loading…"><LoadingState /></ProtectedPage>;
+  if (isLoading) return <ProtectedPage title="Dashboard" subtitle="Loading…" adminOnly><LoadingState /></ProtectedPage>;
 
   const pending = bills.filter((b) => b.status === "PENDING" && !isOverdue(b));
   const overdue = bills.filter(isOverdue);
@@ -30,7 +30,7 @@ function DashboardPage() {
   const sum = (rows: typeof bills) => rows.reduce((t, b) => t + b.totalAmount, 0);
 
   return (
-    <ProtectedPage title="Dashboard" subtitle="Overview of pending and overdue bills">
+    <ProtectedPage title="Dashboard" subtitle="Overview of pending and overdue bills" adminOnly>
       <div className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <StatCard label="Total Bills" value={active.length} icon={FileText} tone="primary" />
@@ -50,7 +50,7 @@ function DashboardPage() {
           <h2 className="text-base font-semibold">Recent pending bills</h2>
           <BillTable
             bills={[...active]
-              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+              .sort((a, b) => new Date(b.billDate).getTime() - new Date(a.billDate).getTime())
               .slice(0, 5)}
             showFilters={false}
             showSearch={false}

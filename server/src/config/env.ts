@@ -21,7 +21,7 @@ export const env = {
   NOTIFICATION_PROVIDER: (process.env.NOTIFICATION_PROVIDER || "whatsapp_meta") as
     | "whatsapp_meta"
     | "console",
-  OVERDUE_DAYS: parseInt(process.env.OVERDUE_DAYS || "7", 10),
+  OVERDUE_DAYS: parseInt(process.env.OVERDUE_DAYS || "10", 10),
   OVERDUE_CRON_SCHEDULE: process.env.OVERDUE_CRON_SCHEDULE || "0 9 * * *",
 
   // Retry config

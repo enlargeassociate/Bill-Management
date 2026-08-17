@@ -24,7 +24,7 @@ import { CompanyForm } from "@/components/companies/CompanyForm";
 import { useAuthStore } from "@/store/authStore";
 import { useBills } from "@/hooks/use-bills";
 import { useDeleteCompany } from "@/hooks/use-companies";
-import { formatINR } from "@/lib/format";
+import { formatINR, isOverdue, remainingAmount } from "@/lib/format";
 import { canDeleteCompany, canEditCompany } from "@/lib/permissions";
 import type { Company } from "@/types";
 
@@ -40,14 +40,15 @@ export function CompanyTable({ search, companies }: { search: string; companies:
 
   const stats = (companyId: string) => {
     const own = bills.filter((b) => b.companyId === companyId);
+    const pendingBills = own.filter((b) => b.status === "PENDING" && !isOverdue(b));
+    const overdueBills = own.filter(isOverdue);
+    const pendingAmt = pendingBills.reduce((t, b) => t + remainingAmount(b), 0);
+    const overdueAmt = overdueBills.reduce((t, b) => t + remainingAmount(b), 0);
     return {
-      total: own.length,
-      pending: own
-        .filter((b) => b.status === "PENDING")
-        .reduce((t, b) => t + b.totalAmount, 0),
-      completed: own
-        .filter((b) => b.status === "COMPLETED")
-        .reduce((t, b) => t + b.totalAmount, 0),
+      totalAmount: own.reduce((t, b) => t + b.totalAmount, 0),
+      pending: pendingAmt,
+      overdue: overdueAmt,
+      outstanding: pendingAmt + overdueAmt,
     };
   };
 
@@ -85,7 +86,8 @@ export function CompanyTable({ search, companies }: { search: string; companies:
                   <TableHead>Phone Number</TableHead>
                   <TableHead className="text-right">Total Bills</TableHead>
                   <TableHead className="text-right">Pending Amount</TableHead>
-                  <TableHead className="text-right">Completed Amount</TableHead>
+                  <TableHead className="text-right">Overdue Amount</TableHead>
+                  <TableHead className="text-right">Total Outstanding</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -104,12 +106,17 @@ export function CompanyTable({ search, companies }: { search: string; companies:
                         </Link>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{company.phone}</TableCell>
-                      <TableCell className="text-right tabular-nums">{s.total}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatINR(s.totalAmount)}
+                      </TableCell>
                       <TableCell className="text-right font-medium tabular-nums">
                         {formatINR(s.pending)}
                       </TableCell>
-                      <TableCell className="text-right font-medium tabular-nums text-success">
-                        {formatINR(s.completed)}
+                      <TableCell className="text-right font-medium tabular-nums text-destructive">
+                        {formatINR(s.overdue)}
+                      </TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">
+                        {formatINR(s.outstanding)}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>

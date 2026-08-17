@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ProtectedPage } from "@/components/layout/ProtectedPage";
 import { BillTable } from "@/components/bills/BillTable";
+import { ExportBills } from "@/components/bills/ExportBills";
 import { LoadingState } from "@/components/common/LoadingState";
 import { useBills } from "@/hooks/use-bills";
 
@@ -15,12 +16,15 @@ function PendingBillsPage() {
 
   return (
     <ProtectedPage title="Pending Bills" subtitle="Bills awaiting payment">
-      <BillTable
-        bills={bills}
-        hideStatusFilter
-        emptyTitle="No pending bills."
-        emptyDescription="Everything is settled — nice work."
-      />
+      <div className="space-y-4">
+        <ExportBills bills={bills} filenamePrefix="pending-bills" />
+        <BillTable
+          bills={bills}
+          hideStatusFilter
+          emptyTitle="No pending bills."
+          emptyDescription="Everything is settled — nice work."
+        />
+      </div>
     </ProtectedPage>
   );
 }

@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   Bell,
   Building2,
-  CheckCircle2,
   Clock,
   FileText,
   LayoutDashboard,
@@ -28,17 +27,20 @@ import { useAuthStore } from "@/store/authStore";
 import { useBills } from "@/hooks/use-bills";
 import { isOverdue } from "@/lib/format";
 
-const navItems = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/companies", label: "Companies", icon: Building2 },
-  { to: "/bills", label: "Bills", icon: FileText },
-  { to: "/pending-bills", label: "Pending Bills", icon: Clock },
-  { to: "/overdue-bills", label: "Overdue Bills", icon: AlertTriangle },
-  { to: "/completed-bills", label: "Completed Bills", icon: CheckCircle2 },
+const allNavItems = [
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: true },
+  { to: "/companies", label: "Companies", icon: Building2, adminOnly: true },
+  { to: "/bills", label: "Bills", icon: FileText, adminOnly: true },
+  { to: "/pending-bills", label: "Pending Bills", icon: Clock, adminOnly: false },
+  { to: "/overdue-bills", label: "Overdue Bills", icon: AlertTriangle, adminOnly: false },
 ] as const;
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const currentUser = useAuthStore((s) => s.currentUser);
+  const isAdmin = currentUser?.role === "ADMIN";
+  const navItems = allNavItems.filter((item) => isAdmin || !item.adminOnly);
+
   return (
     <nav className="flex flex-col gap-1 px-3">
       {navItems.map((item) => {
@@ -70,7 +72,7 @@ function SidebarBrand() {
         <ReceiptText className="h-5 w-5 text-sidebar-primary-foreground" />
       </div>
       <div className="leading-tight">
-        <p className="text-sm font-bold text-sidebar-foreground">BillDesk</p>
+        <p className="text-sm font-bold text-sidebar-foreground">Enlarge Associate</p>
         <p className="text-xs text-sidebar-foreground opacity-60">Bill Management</p>
       </div>
     </div>
@@ -175,7 +177,7 @@ export function DashboardLayout({
             <DropdownMenuContent align="end" className="w-60">
               <DropdownMenuLabel className="space-y-1">
                 <p className="text-sm font-semibold">{currentUser?.name}</p>
-                <p className="text-xs font-normal text-muted-foreground">{currentUser?.email}</p>
+                <p className="text-xs font-normal text-muted-foreground">{currentUser?.username}</p>
                 <Badge variant="outline" className="border-transparent bg-info-soft text-primary">
                   {currentUser?.role}
                 </Badge>

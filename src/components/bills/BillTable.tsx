@@ -51,7 +51,7 @@ import {
 } from "@/lib/permissions";
 import type { Bill } from "@/types";
 
-type SortKey = "company" | "totalAmount" | "createdAt" | "billDate" | "status" | "pendingDays";
+type SortKey = "company" | "totalAmount" | "billDate" | "status" | "pendingDays";
 
 export function BillTable({
   bills,
@@ -81,7 +81,7 @@ export function BillTable({
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<BillFilterState>(emptyFilters);
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({
-    key: "createdAt",
+    key: "billDate",
     dir: "desc",
   });
   const [page, setPage] = useState(1);
@@ -97,6 +97,7 @@ export function BillTable({
     : null;
 
   const companyName = (id: string) => companies.find((c) => c.id === id)?.name ?? "-";
+  const companyPhone = (id: string) => companies.find((c) => c.id === id)?.phone ?? "-";
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -111,7 +112,7 @@ export function BillTable({
       if (filters.companyId !== "ALL" && b.companyId !== filters.companyId) return false;
       if (filters.paymentMethod !== "ALL" && b.paymentMethod !== filters.paymentMethod) return false;
       if (filters.dateFrom || filters.dateTo) {
-        const value = new Date(filters.dateField === "createdAt" ? b.createdAt : b.billDate);
+        const value = new Date(b.billDate);
         if (filters.dateFrom && value < new Date(filters.dateFrom)) return false;
         if (filters.dateTo) {
           const to = new Date(filters.dateTo);
@@ -134,9 +135,8 @@ export function BillTable({
         case "pendingDays":
           return ((pendingDays(a) ?? -1) - (pendingDays(b) ?? -1)) * dir;
         case "billDate":
-          return (new Date(a.billDate).getTime() - new Date(b.billDate).getTime()) * dir;
         default:
-          return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * dir;
+          return (new Date(a.billDate).getTime() - new Date(b.billDate).getTime()) * dir;
       }
     });
     return rows;
@@ -203,12 +203,10 @@ export function BillTable({
                     <TableHead className="min-w-[160px]">
                       <SortHead label="Company" sortKey="company" />
                     </TableHead>
+                    <TableHead>Phone</TableHead>
                     <TableHead>Invoice No.</TableHead>
                     <TableHead className="text-right">
                       <SortHead label="Amount" sortKey="totalAmount" />
-                    </TableHead>
-                    <TableHead>
-                      <SortHead label="Created" sortKey="createdAt" />
                     </TableHead>
                     {variant === "completed" ? (
                       <TableHead>Completed</TableHead>
@@ -230,7 +228,9 @@ export function BillTable({
                       </>
                     )}
                     <TableHead>Payment</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    {user?.role === "ADMIN" && (
+                      <TableHead className="text-right">Actions</TableHead>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -249,12 +249,10 @@ export function BillTable({
                           companyName(bill.companyId)
                         )}
                       </TableCell>
+                      <TableCell className="text-muted-foreground">{companyPhone(bill.companyId)}</TableCell>
                       <TableCell className="font-mono text-xs">{bill.invoiceNumber}</TableCell>
                       <TableCell className="text-right font-semibold tabular-nums">
                         {formatINR(bill.totalAmount)}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap text-muted-foreground">
-                        {formatDate(bill.createdAt)}
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-muted-foreground">
                         {formatDate(variant === "completed" ? bill.completedAt : bill.billDate)}
@@ -290,35 +288,37 @@ export function BillTable({
                       <TableCell>
                         <PaymentBadge method={bill.paymentMethod} />
                       </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" aria-label="Bill actions">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {canEditBill(user) && bill.status === "PENDING" ? (
-                              <DropdownMenuItem onClick={() => setEditBill(bill)}>
-                                <Pencil className="mr-2 h-4 w-4" /> Edit
-                              </DropdownMenuItem>
-                            ) : null}
-                            {canCompleteBill(user) && bill.status === "PENDING" ? (
-                              <DropdownMenuItem onClick={() => setCompleteTarget(bill)}>
-                                <CheckCircle2 className="mr-2 h-4 w-4" /> Complete
-                              </DropdownMenuItem>
-                            ) : null}
-                            {canDeleteBill(user) ? (
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={() => setDeleteTarget(bill)}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete
-                              </DropdownMenuItem>
-                            ) : null}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+                      {user?.role === "ADMIN" && (
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" aria-label="Bill actions">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {canEditBill(user) && bill.status === "PENDING" ? (
+                                <DropdownMenuItem onClick={() => setEditBill(bill)}>
+                                  <Pencil className="mr-2 h-4 w-4" /> Edit
+                                </DropdownMenuItem>
+                              ) : null}
+                              {canCompleteBill(user) && bill.status === "PENDING" ? (
+                                <DropdownMenuItem onClick={() => setCompleteTarget(bill)}>
+                                  <CheckCircle2 className="mr-2 h-4 w-4" /> Complete
+                                </DropdownMenuItem>
+                              ) : null}
+                              {canDeleteBill(user) ? (
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => setDeleteTarget(bill)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                </DropdownMenuItem>
+                              ) : null}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>

@@ -26,7 +26,7 @@ export const formatDateTime = (iso?: string) => {
 export const toDateInput = (iso?: string) => (iso ? new Date(iso).toISOString().slice(0, 10) : "");
 
 export const isOverdue = (bill: Bill) =>
-  bill.status === "PENDING" && (Date.now() - new Date(bill.billDate).getTime()) > 7 * 86_400_000;
+  bill.status === "PENDING" && (Date.now() - new Date(bill.billDate).getTime()) > 10 * 86_400_000;
 
 /** Days elapsed since the bill date, for bills still awaiting payment. */
 export const pendingDays = (bill: Bill): number | null => {
