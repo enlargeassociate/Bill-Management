@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 
 import { Toaster } from "../components/ui/sonner";
+import { InstallPrompt } from "../components/pwa/InstallPrompt";
 
 function NotFoundComponent() {
   return (
@@ -76,6 +77,7 @@ function RootComponent() {
     <>
       <Outlet />
       <Toaster position="top-right" richColors />
+      <InstallPrompt />
     </>
   );
 }
