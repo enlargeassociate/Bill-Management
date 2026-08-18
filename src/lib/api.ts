@@ -84,10 +84,10 @@ class ApiClient {
     });
   }
 
-  async completeBill(id: string, paymentMethod: string, paidAmount?: number, paymentDate?: string) {
+  async completeBill(id: string, paymentMethod: string, paidAmount?: number, paymentDate?: string, discount?: number) {
     return this.request<BillResponse>(`/bills/${id}/complete`, {
       method: "PATCH",
-      body: JSON.stringify({ paymentMethod, paidAmount, paymentDate }),
+      body: JSON.stringify({ paymentMethod, paidAmount, paymentDate, discount }),
     });
   }
 

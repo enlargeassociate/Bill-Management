@@ -17,7 +17,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { DateInput } from "@/components/common/DateInput";
 import { useCompanies } from "@/hooks/use-companies";
 import { useCompleteBill, useDeletePayment } from "@/hooks/use-bills";
-import { formatDate, formatDateTime, formatINR, paidTotal, remainingAmount } from "@/lib/format";
+import { formatDate, formatDateTime, formatINR, paidTotal } from "@/lib/format";
 import type { Bill, PaymentMethod } from "@/types";
 
 const methods: PaymentMethod[] = ["CASH", "CHEQUE", "ONLINE"];
@@ -35,6 +35,7 @@ export function CompleteBillModal({
   const [error, setError] = useState(false);
   const [paidAmount, setPaidAmount] = useState("");
   const [amountError, setAmountError] = useState("");
+  const [discount, setDiscount] = useState("");
   const [paymentDate, setPaymentDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const { data: companies = [] } = useCompanies();
   const completeBillMutation = useCompleteBill();
@@ -44,12 +45,17 @@ export function CompleteBillModal({
   const company = companies.find((c) => c.id === bill.companyId);
 
   const alreadyPaid = paidTotal(bill);
-  const due = remainingAmount(bill);
+  const existingDiscount = bill.discount ?? 0;
+  const discountEntered = Number(discount) || 0;
+  const effectiveTotal = bill.totalAmount - existingDiscount - discountEntered;
+  const due = Math.max(0, effectiveTotal - alreadyPaid);
 
   const rows: [string, string][] = [
     ["Company", company?.name ?? "-"],
     ["Invoice Number", bill.invoiceNumber],
     ["Total Amount", formatINR(bill.totalAmount)],
+    ...(existingDiscount > 0 ? ([["Previous Discount", `- ${formatINR(existingDiscount)}`]] as [string, string][]) : []),
+    ...(discountEntered > 0 ? ([["New Discount", `- ${formatINR(discountEntered)}`]] as [string, string][]) : []),
     ...(alreadyPaid > 0 ? ([["Already Paid", formatINR(alreadyPaid)]] as [string, string][]) : []),
     ["Remaining", formatINR(due)],
     ["Bill Date", formatDate(bill.billDate)],
@@ -64,6 +70,7 @@ export function CompleteBillModal({
     setError(false);
     setPaidAmount("");
     setAmountError("");
+    setDiscount("");
     setPaymentDate(format(new Date(), "yyyy-MM-dd"));
   };
 
@@ -87,14 +94,14 @@ export function CompleteBillModal({
     if (invalid || !method) return;
 
     completeBillMutation.mutate(
-      { id: bill.id, paymentMethod: method, paidAmount: amount, paymentDate },
+      { id: bill.id, paymentMethod: method, paidAmount: amount, paymentDate, discount: discountEntered > 0 ? discountEntered : undefined },
       {
         onSuccess: () => {
           const left = Math.max(0, due - amount);
           if (left > 0) {
-            toast.success(`Payment of ${formatINR(amount)} recorded. ${formatINR(left)} remaining — bill stays pending.`);
+            toast.success(`Payment of ${formatINR(amount)} recorded.${discountEntered > 0 ? ` Discount of ${formatINR(discountEntered)} applied.` : ""} ${formatINR(left)} remaining — bill stays pending.`);
           } else {
-            toast.success("Bill completed successfully. Payment confirmation sent.");
+            toast.success(`Bill completed successfully.${discountEntered > 0 ? ` Discount of ${formatINR(discountEntered)} applied.` : ""} Payment confirmation sent.`);
           }
           reset();
           onOpenChange(false);
@@ -211,6 +218,24 @@ export function CompleteBillModal({
                 ))}
               </RadioGroup>
               {error ? <p className="text-sm text-destructive">Payment method is required.</p> : null}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="discount-amount">Discount (₹)</Label>
+              <Input
+                id="discount-amount"
+                type="number"
+                min="0"
+                max={bill.totalAmount - existingDiscount - alreadyPaid}
+                step="1"
+                inputMode="decimal"
+                value={discount}
+                placeholder="0"
+                onChange={(e) => setDiscount(e.target.value)}
+              />
+              <p className="text-sm text-muted-foreground">
+                Optional. Enter discount amount to reduce the total bill.
+              </p>
             </div>
 
             <div className="space-y-2">

@@ -62,8 +62,8 @@ export function useUpdateBill() {
 export function useCompleteBill() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, paymentMethod, paidAmount, paymentDate }: { id: string; paymentMethod: string; paidAmount?: number; paymentDate?: string }) =>
-      api.completeBill(id, paymentMethod, paidAmount, paymentDate),
+    mutationFn: ({ id, paymentMethod, paidAmount, paymentDate, discount }: { id: string; paymentMethod: string; paidAmount?: number; paymentDate?: string; discount?: number }) =>
+      api.completeBill(id, paymentMethod, paidAmount, paymentDate, discount),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: billKeys.all });
     },

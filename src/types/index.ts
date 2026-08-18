@@ -29,6 +29,7 @@ export interface Bill {
   companyId: string;
   invoiceNumber: string;
   totalAmount: number;
+  discount?: number;
   createdAt: string;
   billDate: string;
   status: BillStatus;
