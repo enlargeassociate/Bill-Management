@@ -20,6 +20,7 @@ const completeBillSchema = z.object({
   paymentMethod: z.enum(["CASH", "CHEQUE", "ONLINE"]),
   paidAmount: z.number().positive().optional(),
   paymentDate: z.string().optional(),
+  discount: z.number().min(0).optional(),
 });
 
 // GET /api/bills
@@ -153,7 +154,7 @@ router.put("/:id", authenticate, requireAdmin, async (req: AuthRequest, res) => 
 // PATCH /api/bills/:id/complete
 router.patch("/:id/complete", authenticate, requireAdmin, async (req: AuthRequest, res) => {
   try {
-    const { paymentMethod, paidAmount, paymentDate } = completeBillSchema.parse(req.body);
+    const { paymentMethod, paidAmount, paymentDate, discount } = completeBillSchema.parse(req.body);
 
     const bill = await Bill.findById(req.params.id);
     if (!bill) {
@@ -165,11 +166,18 @@ router.patch("/:id/complete", authenticate, requireAdmin, async (req: AuthReques
       return;
     }
 
+    // Apply discount if provided
+    const discountAmount = discount ?? 0;
+    const effectiveTotal = bill.totalAmount - (bill.discount || 0) - discountAmount + (bill.discount || 0);
+    // Update discount on the bill
+    const newDiscount = (bill.discount || 0) + discountAmount;
+
     // Calculate payment
     const alreadyPaid = bill.paidAmount || 0;
-    const payment = paidAmount ?? (bill.totalAmount - alreadyPaid);
-    const nextPaid = Math.min(bill.totalAmount, alreadyPaid + payment);
-    const settled = nextPaid >= bill.totalAmount;
+    const billEffectiveTotal = bill.totalAmount - newDiscount;
+    const payment = paidAmount ?? (billEffectiveTotal - alreadyPaid);
+    const nextPaid = Math.min(billEffectiveTotal, alreadyPaid + payment);
+    const settled = nextPaid >= billEffectiveTotal;
 
     // Add payment entry to history
     const paidAt = paymentDate ? new Date(paymentDate) : new Date();
@@ -183,6 +191,7 @@ router.patch("/:id/complete", authenticate, requireAdmin, async (req: AuthReques
       req.params.id,
       {
         paidAmount: nextPaid,
+        discount: newDiscount,
         paymentMethod,
         $push: { payments: paymentEntry },
         ...(settled

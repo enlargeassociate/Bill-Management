@@ -14,6 +14,7 @@ export interface IBill extends Document {
   companyId: Types.ObjectId;
   invoiceNumber: string;
   totalAmount: number;
+  discount: number;
   billDate: Date;
   status: BillStatus;
   paymentMethod?: PaymentMethod;
@@ -38,6 +39,7 @@ const billSchema = new Schema<IBill>(
     companyId: { type: Schema.Types.ObjectId, ref: "Company", required: true },
     invoiceNumber: { type: String, required: true, trim: true },
     totalAmount: { type: Number, required: true, min: 0 },
+    discount: { type: Number, default: 0, min: 0 },
     billDate: { type: Date, required: true },
     status: { type: String, enum: ["PENDING", "COMPLETED", "OVERDUE"], default: "PENDING" },
     paymentMethod: { type: String, enum: ["CASH", "CHEQUE", "ONLINE"] },
