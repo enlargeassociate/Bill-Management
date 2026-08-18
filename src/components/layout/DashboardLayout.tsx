@@ -29,7 +29,7 @@ import { isOverdue } from "@/lib/format";
 
 const allNavItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: true },
-  { to: "/companies", label: "Companies", icon: Building2, adminOnly: true },
+  { to: "/companies", label: "Companies", icon: Building2, adminOnly: false },
   { to: "/bills", label: "Bills", icon: FileText, adminOnly: true },
   { to: "/pending-bills", label: "Pending Bills", icon: Clock, adminOnly: false },
   { to: "/overdue-bills", label: "Overdue Bills", icon: AlertTriangle, adminOnly: false },

@@ -88,7 +88,9 @@ export function CompanyTable({ search, companies }: { search: string; companies:
                   <TableHead className="text-right">Pending Amount</TableHead>
                   <TableHead className="text-right">Overdue Amount</TableHead>
                   <TableHead className="text-right">Total Outstanding</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  {user?.role === "ADMIN" && (
+                    <TableHead className="text-right">Actions</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -118,30 +120,32 @@ export function CompanyTable({ search, companies }: { search: string; companies:
                       <TableCell className="text-right font-medium tabular-nums">
                         {formatINR(s.outstanding)}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" aria-label="Company actions">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {canEditCompany(user) ? (
-                              <DropdownMenuItem onClick={() => setEditTarget(company)}>
-                                <Pencil className="mr-2 h-4 w-4" /> Edit
-                              </DropdownMenuItem>
-                            ) : null}
-                            {canDeleteCompany(user) ? (
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={() => setDeleteTarget(company)}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete
-                              </DropdownMenuItem>
-                            ) : null}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+                      {user?.role === "ADMIN" && (
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" aria-label="Company actions">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {canEditCompany(user) ? (
+                                <DropdownMenuItem onClick={() => setEditTarget(company)}>
+                                  <Pencil className="mr-2 h-4 w-4" /> Edit
+                                </DropdownMenuItem>
+                              ) : null}
+                              {canDeleteCompany(user) ? (
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => setDeleteTarget(company)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                </DropdownMenuItem>
+                              ) : null}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}

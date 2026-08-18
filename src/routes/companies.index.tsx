@@ -21,10 +21,10 @@ function CompaniesPage() {
   const user = useAuthStore((s) => s.currentUser);
   const { data: companies = [], isLoading } = useCompanies();
 
-  if (isLoading) return <ProtectedPage title="Companies" subtitle="Loading…" adminOnly><LoadingState /></ProtectedPage>;
+  if (isLoading) return <ProtectedPage title="Companies" subtitle="Loading…"><LoadingState /></ProtectedPage>;
 
   return (
-    <ProtectedPage title="Companies" subtitle="Your company directory and their bill totals" adminOnly>
+    <ProtectedPage title="Companies" subtitle="Your company directory and their bill totals">
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <SearchInput
