@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff, Lock, ReceiptText, User, ArrowRight, Shield } from "lucide-react";
+import { Eye, EyeOff, Lock, User, ArrowRight, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,12 +91,12 @@ function LoginPage() {
         {/* Content */}
         <div className="relative z-10 max-w-lg text-center text-white">
           <motion.div
-            className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-3xl bg-blue-500/20 backdrop-blur-sm shadow-xl border border-blue-400/20"
+            className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 backdrop-blur-sm shadow-xl border border-blue-400/20 overflow-hidden"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.4 }}
           >
-            <ReceiptText className="h-10 w-10 text-blue-300" />
+            <img src="/logo/logo.png" alt="Enlarge Associate" className="h-full w-full object-contain" />
           </motion.div>
 
           <motion.h1
@@ -148,8 +148,8 @@ function LoginPage() {
         >
           {/* Mobile brand */}
           <div className="mb-8 text-center lg:hidden">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg shadow-blue-500/20">
-              <ReceiptText className="h-7 w-7 text-white" />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 shadow-lg shadow-blue-500/20 overflow-hidden">
+              <img src="/logo/logo.png" alt="Enlarge Associate" className="h-full w-full object-contain" />
             </div>
             <h1 className="text-2xl font-bold text-white">Enlarge Associate</h1>
           </div>

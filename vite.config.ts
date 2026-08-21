@@ -12,7 +12,7 @@ export default defineConfig({
     tsconfigPaths(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "robots.txt"],
+      includeAssets: ["favicon.png", "logo/logo.png", "robots.txt"],
       manifest: {
         name: "Enlarge Associate - Bill Management",
         short_name: "Enlarge Associate",
