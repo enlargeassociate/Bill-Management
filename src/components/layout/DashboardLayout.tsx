@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  ReceiptText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -67,7 +68,9 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 function SidebarBrand() {
   return (
     <div className="flex items-center gap-2.5 px-5 py-5">
-      <img src="/logo/logo.png" alt="Enlarge Associate" className="h-9 w-9 rounded-lg object-contain" />
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary">
+        <ReceiptText className="h-5 w-5 text-sidebar-primary-foreground" />
+      </div>
       <div className="leading-tight">
         <p className="text-sm font-bold text-sidebar-foreground">Enlarge Associate</p>
         <p className="text-xs text-sidebar-foreground opacity-60">Bill Management</p>
