@@ -67,8 +67,11 @@ export async function sendPaymentConfirmation(payload: PaymentConfirmationPayloa
     invoiceNumber: payload.invoiceNumber,
     totalAmount: payload.totalAmount,
     paidAmount: payload.paidAmount,
+    discount: 0,
     billDate: new Date(), // Not relevant for confirmation, use current date
     overdueDays: 0,
+    totalPendingBills: 0,
+    totalOutstandingAmount: remaining,
   });
 
   // Log the notification

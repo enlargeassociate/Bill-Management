@@ -103,6 +103,12 @@ class ApiClient {
     });
   }
 
+  async sendWhatsApp(billId: string) {
+    return this.request<{ success: boolean; messageId?: string }>(`/bills/${billId}/send-whatsapp`, {
+      method: "POST",
+    });
+  }
+
   // ─── Companies ──────────────────────────────────────────────
   async getCompanies() {
     return this.request<CompanyResponse[]>("/companies");

@@ -90,3 +90,9 @@ export function useDeletePayment() {
     },
   });
 }
+
+export function useSendWhatsApp() {
+  return useMutation({
+    mutationFn: (billId: string) => api.sendWhatsApp(billId),
+  });
+}

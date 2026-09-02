@@ -3,8 +3,9 @@ import { z } from "zod";
 import { Bill } from "../models/Bill.js";
 import { Company } from "../models/Company.js";
 import { authenticate, requireAdmin, type AuthRequest } from "../middleware/auth.js";
-import { notificationService } from "../services/notifications/index.js";
-import { sendPaymentConfirmation } from "../services/notifications/payment-confirmation.js";
+// WhatsApp notifications temporarily disabled — imports kept commented for re-enabling later.
+// import { notificationService } from "../services/notifications/index.js";
+// import { sendPaymentConfirmation } from "../services/notifications/payment-confirmation.js";
 import type { Types } from "mongoose";
 
 const router = Router();
@@ -202,23 +203,25 @@ router.patch("/:id/complete", authenticate, requireAdmin, async (req: AuthReques
     );
 
     // Send payment confirmation notification to the company
-    const company = await Company.findById(bill.companyId);
-    if (company && updated) {
-      // Fire-and-forget: don't block the API response
-      sendPaymentConfirmation({
-        billId: bill._id as Types.ObjectId,
-        companyId: company._id as Types.ObjectId,
-        companyName: company.name,
-        phone: company.phone,
-        invoiceNumber: bill.invoiceNumber,
-        totalAmount: bill.totalAmount,
-        paidAmount: nextPaid,
-        paymentMethod,
-        isFullyPaid: settled,
-      }).catch((err) => {
-        console.error("Failed to send payment confirmation:", err);
-      });
-    }
+    // NOTE: WhatsApp payment confirmation temporarily disabled until WhatsApp
+    // Cloud API / coexistence setup is finalized.
+    // const company = await Company.findById(bill.companyId);
+    // if (company && updated) {
+    //   // Fire-and-forget: don't block the API response
+    //   sendPaymentConfirmation({
+    //     billId: bill._id as Types.ObjectId,
+    //     companyId: company._id as Types.ObjectId,
+    //     companyName: company.name,
+    //     phone: company.phone,
+    //     invoiceNumber: bill.invoiceNumber,
+    //     totalAmount: bill.totalAmount,
+    //     paidAmount: nextPaid,
+    //     paymentMethod,
+    //     isFullyPaid: settled,
+    //   }).catch((err) => {
+    //     console.error("Failed to send payment confirmation:", err);
+    //   });
+    // }
 
     res.json(updated);
   } catch (error) {
@@ -273,6 +276,76 @@ router.delete("/:id/payments/:paymentId", authenticate, requireAdmin, async (req
     res.status(500).json({ error: "Server error" });
   }
 });
+
+// POST /api/bills/:id/send-whatsapp — Manually send WhatsApp notification for a bill
+// NOTE: WhatsApp sending temporarily disabled until WhatsApp Cloud API / coexistence
+// setup is finalized. The full implementation is preserved (commented) below.
+router.post("/:id/send-whatsapp", authenticate, requireAdmin, async (_req: AuthRequest, res) => {
+  res.status(503).json({ error: "WhatsApp messaging is temporarily disabled." });
+});
+/*
+router.post("/:id/send-whatsapp", authenticate, requireAdmin, async (req: AuthRequest, res) => {
+  try {
+    const bill = await Bill.findById(req.params.id);
+    if (!bill) {
+      res.status(404).json({ error: "Bill not found" });
+      return;
+    }
+
+    const company = await Company.findById(bill.companyId);
+    if (!company) {
+      res.status(400).json({ error: "Company not found" });
+      return;
+    }
+
+    // Get last payment date from payments array
+    const payments = bill.payments || [];
+    const lastPaymentDate = payments.length > 0
+      ? new Date(Math.max(...payments.map((p) => new Date(p.paidAt).getTime())))
+      : undefined;
+
+    // Calculate totals for this company (all pending/overdue bills)
+    const allPendingBills = await Bill.find({
+      companyId: bill.companyId,
+      status: { $in: ["PENDING", "OVERDUE"] },
+    }).lean();
+
+    const totalPendingBills = allPendingBills.length;
+    const totalOutstandingAmount = allPendingBills.reduce(
+      (sum, b) => sum + (b.totalAmount - b.paidAmount - (b.discount || 0)),
+      0
+    );
+
+    const overdueDays = Math.floor(
+      (Date.now() - new Date(bill.billDate).getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    const result = await notificationService.send({
+      billId: bill._id as Types.ObjectId,
+      companyId: company._id as Types.ObjectId,
+      companyName: company.name,
+      phone: company.phone,
+      invoiceNumber: bill.invoiceNumber,
+      totalAmount: bill.totalAmount,
+      paidAmount: bill.paidAmount,
+      discount: bill.discount || 0,
+      billDate: new Date(bill.billDate),
+      overdueDays,
+      lastPaymentDate,
+      totalPendingBills,
+      totalOutstandingAmount,
+    });
+
+    if (result.success) {
+      res.json({ success: true, messageId: result.messageId });
+    } else {
+      res.status(500).json({ error: result.error || "Failed to send WhatsApp message" });
+    }
+  } catch {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+*/
 
 // DELETE /api/bills/:id
 router.delete("/:id", authenticate, requireAdmin, async (req: AuthRequest, res) => {

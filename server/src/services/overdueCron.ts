@@ -70,6 +70,22 @@ async function sendNotifications() {
   const companies = await Company.find({ _id: { $in: companyIds } }).lean();
   const companyMap = new Map(companies.map((c) => [c._id.toString(), c]));
 
+  // Get all pending/overdue bills per company for total counts and outstanding amounts
+  const allPendingBills = await Bill.find({
+    companyId: { $in: companyIds },
+    status: { $in: ["PENDING", "OVERDUE"] },
+  }).lean();
+
+  // Group pending bills by company
+  const pendingBillsByCompany = new Map<string, typeof allPendingBills>();
+  for (const b of allPendingBills) {
+    const key = b.companyId.toString();
+    if (!pendingBillsByCompany.has(key)) {
+      pendingBillsByCompany.set(key, []);
+    }
+    pendingBillsByCompany.get(key)!.push(b);
+  }
+
   // Build payloads
   const payloads: NotificationPayload[] = [];
 
@@ -84,6 +100,20 @@ async function sendNotifications() {
       (Date.now() - new Date(bill.billDate).getTime()) / (1000 * 60 * 60 * 24)
     );
 
+    // Get last payment date from payments array
+    const payments = (bill as unknown as { payments?: Array<{ paidAt: Date }> }).payments || [];
+    const lastPaymentDate = payments.length > 0
+      ? new Date(Math.max(...payments.map((p) => new Date(p.paidAt).getTime())))
+      : undefined;
+
+    // Calculate totals for this company
+    const companyPendingBills = pendingBillsByCompany.get(bill.companyId.toString()) || [];
+    const totalPendingBills = companyPendingBills.length;
+    const totalOutstandingAmount = companyPendingBills.reduce(
+      (sum, b) => sum + (b.totalAmount - b.paidAmount - (b.discount || 0)),
+      0
+    );
+
     payloads.push({
       billId: bill._id as Types.ObjectId,
       companyId: company._id as Types.ObjectId,
@@ -92,8 +122,12 @@ async function sendNotifications() {
       invoiceNumber: bill.invoiceNumber,
       totalAmount: bill.totalAmount,
       paidAmount: bill.paidAmount,
+      discount: (bill as unknown as { discount?: number }).discount || 0,
       billDate: new Date(bill.billDate),
       overdueDays,
+      lastPaymentDate,
+      totalPendingBills,
+      totalOutstandingAmount,
     });
   }
 
@@ -134,8 +168,8 @@ async function runOverdueCheck() {
       console.log("  ✅ No new overdue bills.");
     }
 
-    // Step 2 & 3: Notify
-    await sendNotifications();
+    // Step 2 & 3: Notify (commented out — using manual send from complete bill modal instead)
+    // await sendNotifications();
   } catch (error) {
     console.error("  ❌ Overdue check failed:", error);
   }

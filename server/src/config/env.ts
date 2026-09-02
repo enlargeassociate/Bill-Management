@@ -16,6 +16,7 @@ export const env = {
   WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID || "",
   WHATSAPP_BUSINESS_ACCOUNT_ID: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || "",
   WHATSAPP_TEMPLATE_NAME: process.env.WHATSAPP_TEMPLATE_NAME || "overdue_reminder",
+  WHATSAPP_TEMPLATE_NAME_NO_DISCOUNT: process.env.WHATSAPP_TEMPLATE_NAME_NO_DISCOUNT || "overdue_reminder_no_discount",
 
   // Notification settings
   NOTIFICATION_PROVIDER: (process.env.NOTIFICATION_PROVIDER || "whatsapp_meta") as

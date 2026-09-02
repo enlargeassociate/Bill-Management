@@ -40,6 +40,7 @@ export function CompleteBillModal({
   const { data: companies = [] } = useCompanies();
   const completeBillMutation = useCompleteBill();
   const deletePaymentMutation = useDeletePayment();
+  // const sendWhatsAppMutation = useSendWhatsApp(); // temporarily disabled
 
   if (!bill) return null;
   const company = companies.find((c) => c.id === bill.companyId);
@@ -126,6 +127,19 @@ export function CompleteBillModal({
       },
     );
   };
+
+  // WhatsApp sending temporarily disabled until Cloud API / coexistence setup is finalized.
+  // const handleSendWhatsApp = () => {
+  //   if (!bill) return;
+  //   sendWhatsAppMutation.mutate(bill.id, {
+  //     onSuccess: () => {
+  //       toast.success("WhatsApp message sent successfully!");
+  //     },
+  //     onError: (err) => {
+  //       toast.error(err.message || "Failed to send WhatsApp message.");
+  //     },
+  //   });
+  // };
 
   const payments = bill.payments ?? [];
 
@@ -288,6 +302,17 @@ export function CompleteBillModal({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
+          {/* WhatsApp send temporarily disabled until Cloud API / coexistence setup is finalized.
+          <Button
+            variant="secondary"
+            onClick={handleSendWhatsApp}
+            disabled={sendWhatsAppMutation.isPending}
+            className="gap-2"
+          >
+            <MessageCircle className="h-4 w-4" />
+            {sendWhatsAppMutation.isPending ? "Sending…" : "Send WhatsApp"}
+          </Button>
+          */}
           {bill.status !== "COMPLETED" && (
             <Button onClick={handleComplete} disabled={completeBillMutation.isPending}>
               {completeBillMutation.isPending

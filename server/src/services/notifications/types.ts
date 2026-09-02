@@ -12,8 +12,12 @@ export interface NotificationPayload {
   invoiceNumber: string;
   totalAmount: number;
   paidAmount: number;
+  discount: number;
   billDate: Date;
   overdueDays: number;
+  lastPaymentDate?: Date;
+  totalPendingBills: number;
+  totalOutstandingAmount: number;
 }
 
 /**

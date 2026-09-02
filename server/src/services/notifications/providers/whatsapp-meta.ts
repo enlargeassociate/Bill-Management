@@ -7,16 +7,28 @@ import type { NotificationPayload, NotificationProvider, NotificationResult } fr
  * Free tier: 1,000 service conversations/month.
  * Uses template messages (required by WhatsApp for business-initiated messages).
  *
- * Setup:
- * 1. Create a Meta Business Account at business.facebook.com
- * 2. Set up WhatsApp Business API at developers.facebook.com
- * 3. Create a message template named "overdue_reminder" with parameters:
- *    - {{1}} = company name
- *    - {{2}} = invoice number
- *    - {{3}} = total amount
- *    - {{4}} = outstanding amount
- *    - {{5}} = overdue days
- * 4. Get your Phone Number ID and API token from the dashboard
+ * Two templates are used:
+ * - "overdue_reminder" (with discount) — 8 parameters
+ * - "overdue_reminder_no_discount" (without discount) — 7 parameters (no discount param)
+ *
+ * Template with discount ({{1}}-{{8}}):
+ *   {{1}} = Invoice number
+ *   {{2}} = Total bill amount
+ *   {{3}} = Paid amount
+ *   {{4}} = Last payment date
+ *   {{5}} = Remaining amount
+ *   {{6}} = Discount amount
+ *   {{7}} = Total pending bills count
+ *   {{8}} = Total outstanding amount
+ *
+ * Template without discount ({{1}}-{{7}}):
+ *   {{1}} = Invoice number
+ *   {{2}} = Total bill amount
+ *   {{3}} = Paid amount
+ *   {{4}} = Last payment date
+ *   {{5}} = Remaining amount
+ *   {{6}} = Total pending bills count
+ *   {{7}} = Total outstanding amount
  */
 export class WhatsAppMetaProvider implements NotificationProvider {
   readonly name = "WhatsApp (Meta Cloud API)";
@@ -24,12 +36,10 @@ export class WhatsAppMetaProvider implements NotificationProvider {
 
   private readonly apiUrl: string;
   private readonly token: string;
-  private readonly templateName: string;
 
   constructor() {
     this.apiUrl = `https://graph.facebook.com/v21.0/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
     this.token = env.WHATSAPP_API_TOKEN;
-    this.templateName = env.WHATSAPP_TEMPLATE_NAME;
   }
 
   isConfigured(): boolean {
@@ -41,8 +51,52 @@ export class WhatsAppMetaProvider implements NotificationProvider {
       return { success: false, error: "WhatsApp Meta API not configured" };
     }
 
+    // Only send WhatsApp messages to the allowed number
+    const ALLOWED_WHATSAPP_NUMBER = "6354906794";
+    const cleanedPhone = payload.phone.replace(/\D/g, "");
+    if (cleanedPhone !== ALLOWED_WHATSAPP_NUMBER && !cleanedPhone.endsWith(ALLOWED_WHATSAPP_NUMBER)) {
+      console.log(`⏭️  Skipping WhatsApp message for ${payload.phone} — only ${ALLOWED_WHATSAPP_NUMBER} is allowed.`);
+      return { success: true, messageId: "skipped-not-allowed-number" };
+    }
+
     const phone = this.formatPhone(payload.phone);
-    const remaining = payload.totalAmount - payload.paidAmount;
+    const remaining = payload.totalAmount - payload.paidAmount - payload.discount;
+
+    // Format last payment date in DD/MM/YYYY format
+    const lastPaymentDateStr = payload.lastPaymentDate
+      ? new Date(payload.lastPaymentDate).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        })
+      : "N/A";
+
+    // Choose template and parameters based on whether discount exists
+    const hasDiscount = payload.discount > 0;
+    const templateName = hasDiscount
+      ? env.WHATSAPP_TEMPLATE_NAME
+      : env.WHATSAPP_TEMPLATE_NAME_NO_DISCOUNT;
+
+    const parameters = hasDiscount
+      ? [
+          { type: "text", text: payload.invoiceNumber },                            // {{1}} - Invoice number
+          { type: "text", text: this.formatAmount(payload.totalAmount) },            // {{2}} - Total bill amount
+          { type: "text", text: this.formatAmount(payload.paidAmount) },             // {{3}} - Paid amount
+          { type: "text", text: lastPaymentDateStr },                               // {{4}} - Last payment date
+          { type: "text", text: this.formatAmount(remaining) },                     // {{5}} - Remaining amount
+          { type: "text", text: this.formatAmount(payload.discount) },              // {{6}} - Discount amount
+          { type: "text", text: String(payload.totalPendingBills) },                // {{7}} - Total pending bills count
+          { type: "text", text: this.formatAmount(payload.totalOutstandingAmount) }, // {{8}} - Total outstanding
+        ]
+      : [
+          { type: "text", text: payload.invoiceNumber },                            // {{1}} - Invoice number
+          { type: "text", text: this.formatAmount(payload.totalAmount) },            // {{2}} - Total bill amount
+          { type: "text", text: this.formatAmount(payload.paidAmount) },             // {{3}} - Paid amount
+          { type: "text", text: lastPaymentDateStr },                               // {{4}} - Last payment date
+          { type: "text", text: this.formatAmount(remaining) },                     // {{5}} - Remaining amount
+          { type: "text", text: String(payload.totalPendingBills) },                // {{6}} - Total pending bills count
+          { type: "text", text: this.formatAmount(payload.totalOutstandingAmount) }, // {{7}} - Total outstanding
+        ];
 
     try {
       const response = await fetch(this.apiUrl, {
@@ -56,18 +110,12 @@ export class WhatsAppMetaProvider implements NotificationProvider {
           to: phone,
           type: "template",
           template: {
-            name: this.templateName,
-            language: { code: "en" },
+            name: templateName,
+            language: { code: "gu" },
             components: [
               {
                 type: "body",
-                parameters: [
-                  { type: "text", text: payload.companyName },
-                  { type: "text", text: this.formatAmount(payload.paidAmount || payload.totalAmount) },
-                  { type: "text", text: payload.invoiceNumber },
-                  { type: "text", text: String(payload.overdueDays || "CASH") },
-                  { type: "text", text: this.formatAmount(remaining) },
-                ],
+                parameters,
               },
             ],
           },
