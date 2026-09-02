@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import type { Bill } from "@/types";
-import { formatINR, isOverdue } from "@/lib/format";
+import { formatINR, isOverdue, remainingAmount } from "@/lib/format";
 
 const COLORS = {
   pending: "var(--chart-1)",
@@ -76,13 +76,13 @@ export function MonthlyBillChart({ bills }: { bills: Bill[] }) {
     });
   }
   bills.forEach((b) => {
-    const d = new Date(b.createdAt);
+    const d = new Date(b.billDate);
     const entry = months.find((m) => m.key === `${d.getFullYear()}-${d.getMonth()}`);
-    if (entry) entry.amount += b.totalAmount;
+    if (entry) entry.amount += remainingAmount(b);
   });
 
   return (
-    <ChartCard title="Monthly Bill Amount" subtitle="Pending and overdue bill value by creation month">
+    <ChartCard title="Monthly Bill Amount" subtitle="Pending and overdue bill value by bill month">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={months}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />

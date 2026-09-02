@@ -91,6 +91,24 @@ export function useDeletePayment() {
   });
 }
 
+export function useUpdatePayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      billId,
+      paymentId,
+      data,
+    }: {
+      billId: string;
+      paymentId: string;
+      data: { amount?: number; method?: string; paidAt?: string };
+    }) => api.updatePayment(billId, paymentId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: billKeys.all });
+    },
+  });
+}
+
 export function useSendWhatsApp() {
   return useMutation({
     mutationFn: (billId: string) => api.sendWhatsApp(billId),

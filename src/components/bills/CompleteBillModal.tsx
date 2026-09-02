@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -16,7 +16,14 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { DateInput } from "@/components/common/DateInput";
 import { useCompanies } from "@/hooks/use-companies";
-import { useCompleteBill, useDeletePayment } from "@/hooks/use-bills";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useCompleteBill, useDeletePayment, useUpdatePayment } from "@/hooks/use-bills";
 import { formatDate, formatDateTime, formatINR, paidTotal } from "@/lib/format";
 import type { Bill, PaymentMethod } from "@/types";
 
@@ -40,7 +47,14 @@ export function CompleteBillModal({
   const { data: companies = [] } = useCompanies();
   const completeBillMutation = useCompleteBill();
   const deletePaymentMutation = useDeletePayment();
+  const updatePaymentMutation = useUpdatePayment();
   // const sendWhatsAppMutation = useSendWhatsApp(); // temporarily disabled
+
+  // Inline payment editing state
+  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editMethod, setEditMethod] = useState<PaymentMethod>("CASH");
+  const [editError, setEditError] = useState("");
 
   if (!bill) return null;
   const company = companies.find((c) => c.id === bill.companyId);
@@ -73,6 +87,9 @@ export function CompleteBillModal({
     setAmountError("");
     setDiscount("");
     setPaymentDate(format(new Date(), "yyyy-MM-dd"));
+    setEditingPaymentId(null);
+    setEditAmount("");
+    setEditError("");
   };
 
   const handleComplete = () => {
@@ -95,7 +112,7 @@ export function CompleteBillModal({
     if (invalid || !method) return;
 
     completeBillMutation.mutate(
-      { id: bill.id, paymentMethod: method, paidAmount: amount, paymentDate, discount: discountEntered > 0 ? discountEntered : undefined },
+      { id: bill.id, paymentMethod: method, paidAmount: amount, paymentDate, ...(discountEntered > 0 ? { discount: discountEntered } : {}) },
       {
         onSuccess: () => {
           const left = Math.max(0, due - amount);
@@ -128,6 +145,40 @@ export function CompleteBillModal({
     );
   };
 
+  const startEditPayment = (paymentId: string, amount: number, method: PaymentMethod) => {
+    setEditingPaymentId(paymentId);
+    setEditAmount(String(amount));
+    setEditMethod(method);
+    setEditError("");
+  };
+
+  const cancelEditPayment = () => {
+    setEditingPaymentId(null);
+    setEditAmount("");
+    setEditError("");
+  };
+
+  const handleUpdatePayment = (paymentId: string) => {
+    if (!bill) return;
+    const amount = Number(editAmount);
+    if (editAmount.trim() === "" || Number.isNaN(amount) || amount <= 0) {
+      setEditError("Enter a valid amount greater than 0.");
+      return;
+    }
+    updatePaymentMutation.mutate(
+      { billId: bill.id, paymentId, data: { amount, method: editMethod } },
+      {
+        onSuccess: () => {
+          toast.success("Payment updated successfully.");
+          cancelEditPayment();
+        },
+        onError: (err) => {
+          setEditError(err.message || "Failed to update payment.");
+        },
+      },
+    );
+  };
+
   // WhatsApp sending temporarily disabled until Cloud API / coexistence setup is finalized.
   // const handleSendWhatsApp = () => {
   //   if (!bill) return;
@@ -153,9 +204,13 @@ export function CompleteBillModal({
     >
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Record Payment</DialogTitle>
+          <DialogTitle>
+            {bill.status === "COMPLETED" ? "Manage Payments" : "Record Payment"}
+          </DialogTitle>
           <DialogDescription>
-            Enter the amount received. Partial payments keep the bill pending with the balance remaining.
+            {bill.status === "COMPLETED"
+              ? "Delete an incorrect payment below to correct a mistake. Removing a payment that leaves a balance will reopen the bill as pending so you can re-record it."
+              : "Enter the amount received. Partial payments keep the bill pending with the balance remaining."}
           </DialogDescription>
         </DialogHeader>
 
@@ -173,35 +228,113 @@ export function CompleteBillModal({
           <div className="space-y-2">
             <Label className="text-sm font-medium">Payment History</Label>
             <div className="rounded-xl border border-border bg-muted/40 divide-y divide-border">
-              {payments.map((payment) => (
-                <div
-                  key={payment.id}
-                  className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"
-                >
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-medium text-foreground">
-                      {formatINR(payment.amount)}{" "}
-                      <span className="text-xs font-normal text-muted-foreground">
-                        via {payment.method.charAt(0) + payment.method.slice(1).toLowerCase()}
-                      </span>
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDateTime(payment.paidAt)}
-                    </span>
+              {payments.map((payment) =>
+                editingPaymentId === payment.id ? (
+                  <div key={payment.id} className="space-y-2 px-4 py-3 text-sm">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <div className="flex-1 space-y-1">
+                        <Label className="text-xs">Amount (₹)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          inputMode="decimal"
+                          value={editAmount}
+                          onChange={(e) => {
+                            setEditAmount(e.target.value);
+                            setEditError("");
+                          }}
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <Label className="text-xs">Method</Label>
+                        <Select
+                          value={editMethod}
+                          onValueChange={(v) => setEditMethod(v as PaymentMethod)}
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {methods.map((m) => (
+                              <SelectItem key={m} value={m}>
+                                {m.charAt(0) + m.slice(1).toLowerCase()}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-end gap-1 self-end">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-success hover:bg-success-soft"
+                          onClick={() => handleUpdatePayment(payment.id)}
+                          disabled={updatePaymentMutation.isPending}
+                          title="Save changes"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-muted-foreground"
+                          onClick={cancelEditPayment}
+                          disabled={updatePaymentMutation.isPending}
+                          title="Cancel"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    {editError ? <p className="text-xs text-destructive">{editError}</p> : null}
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => handleDeletePayment(payment.id)}
-                    disabled={deletePaymentMutation.isPending}
-                    title="Remove this payment"
+                ) : (
+                  <div
+                    key={payment.id}
+                    className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-medium text-foreground">
+                        {formatINR(payment.amount)}{" "}
+                        <span className="text-xs font-normal text-muted-foreground">
+                          via {payment.method.charAt(0) + payment.method.slice(1).toLowerCase()}
+                        </span>
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDateTime(payment.paidAt)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        onClick={() => startEditPayment(payment.id, payment.amount, payment.method)}
+                        disabled={deletePaymentMutation.isPending || updatePaymentMutation.isPending}
+                        title="Edit this payment"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeletePayment(payment.id)}
+                        disabled={deletePaymentMutation.isPending}
+                        title="Remove this payment"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ),
+              )}
             </div>
           </div>
         )}

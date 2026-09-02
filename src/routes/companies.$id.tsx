@@ -30,6 +30,7 @@ function CompanyDetailPage() {
   if (isLoading) return <ProtectedPage title="Company" subtitle="Loading…"><LoadingState /></ProtectedPage>;
 
   const bills = allBills;
+  const active = bills.filter((b) => b.status !== "COMPLETED");
   const pending = bills.filter((b) => b.status === "PENDING" && !isOverdue(b));
   const overdueBills = bills.filter(isOverdue);
   const pendingAmount = pending.reduce((t, b) => t + remainingAmount(b), 0);
@@ -67,7 +68,7 @@ function CompanyDetailPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <StatCard label="Total Bills" value={bills.length} icon={FileText} tone="primary" />
+              <StatCard label="Total Bills" value={active.length} icon={FileText} tone="primary" />
               <StatCard
                 label="Pending Amount"
                 value={formatINR(pendingAmount)}

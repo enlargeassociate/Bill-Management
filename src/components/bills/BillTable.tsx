@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import {
   ArrowUpDown,
   CheckCircle2,
+  Receipt,
   FileText,
   MoreHorizontal,
   Pencil,
@@ -305,6 +306,11 @@ export function BillTable({
                               {canCompleteBill(user) && bill.status === "PENDING" ? (
                                 <DropdownMenuItem onClick={() => setCompleteTarget(bill)}>
                                   <CheckCircle2 className="mr-2 h-4 w-4" /> Complete
+                                </DropdownMenuItem>
+                              ) : null}
+                              {canCompleteBill(user) && bill.status === "COMPLETED" ? (
+                                <DropdownMenuItem onClick={() => setCompleteTarget(bill)}>
+                                  <Receipt className="mr-2 h-4 w-4" /> Manage Payments
                                 </DropdownMenuItem>
                               ) : null}
                               {canDeleteBill(user) ? (

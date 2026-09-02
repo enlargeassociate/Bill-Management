@@ -103,6 +103,17 @@ class ApiClient {
     });
   }
 
+  async updatePayment(
+    billId: string,
+    paymentId: string,
+    data: { amount?: number; method?: string; paidAt?: string },
+  ) {
+    return this.request<BillResponse>(`/bills/${billId}/payments/${paymentId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
   async sendWhatsApp(billId: string) {
     return this.request<{ success: boolean; messageId?: string }>(`/bills/${billId}/send-whatsapp`, {
       method: "POST",

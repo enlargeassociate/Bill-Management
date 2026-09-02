@@ -24,6 +24,12 @@ const completeBillSchema = z.object({
   discount: z.number().min(0).optional(),
 });
 
+const updatePaymentSchema = z.object({
+  amount: z.number().positive().optional(),
+  method: z.enum(["CASH", "CHEQUE", "ONLINE"]).optional(),
+  paidAt: z.string().optional(),
+});
+
 // GET /api/bills
 router.get("/", authenticate, async (req, res) => {
   try {
@@ -273,6 +279,80 @@ router.delete("/:id/payments/:paymentId", authenticate, requireAdmin, async (req
     const updated = await Bill.findByIdAndUpdate(req.params.id, updateData, { new: true });
     res.json(updated);
   } catch {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// PATCH /api/bills/:id/payments/:paymentId — Update an existing payment (amount/method/date)
+router.patch("/:id/payments/:paymentId", authenticate, requireAdmin, async (req: AuthRequest, res) => {
+  try {
+    const data = updatePaymentSchema.parse(req.body);
+
+    const bill = await Bill.findById(req.params.id);
+    if (!bill) {
+      res.status(404).json({ error: "Bill not found" });
+      return;
+    }
+
+    const payment = bill.payments.find(
+      (p) => p._id?.toString() === req.params.paymentId
+    );
+    if (!payment) {
+      res.status(404).json({ error: "Payment not found" });
+      return;
+    }
+
+    // Compute new paidAmount = sum of all payments with this one's amount replaced
+    const oldAmount = payment.amount;
+    const nextAmount = data.amount ?? oldAmount;
+
+    // Recalculate total paid across all payments after this edit
+    const newPaidAmount = bill.payments.reduce((sum, p) => {
+      if (p._id?.toString() === req.params.paymentId) return sum + nextAmount;
+      return sum + p.amount;
+    }, 0);
+
+    // Effective amount owed (total minus discount)
+    const owed = bill.totalAmount - (bill.discount || 0);
+
+    if (newPaidAmount > owed) {
+      res.status(400).json({
+        error: `Updated amount exceeds the bill total. Maximum allowed for this payment is ${nextAmount - (newPaidAmount - owed)}.`,
+      });
+      return;
+    }
+
+    // Apply the field updates to the matched payment (positional operator)
+    const setFields: Record<string, unknown> = { paidAmount: newPaidAmount };
+    if (data.amount !== undefined) setFields["payments.$.amount"] = data.amount;
+    if (data.method !== undefined) setFields["payments.$.method"] = data.method;
+    if (data.paidAt !== undefined) setFields["payments.$.paidAt"] = new Date(data.paidAt);
+
+    // Keep the bill's top-level paymentMethod in sync when method changes
+    if (data.method !== undefined) setFields.paymentMethod = data.method;
+
+    // Determine status based on the new paid total
+    if (newPaidAmount >= owed) {
+      setFields.status = "COMPLETED";
+      if (!bill.completedAt) setFields.completedAt = new Date();
+    } else if (bill.status === "COMPLETED") {
+      // Was completed but now has a balance — reopen it
+      setFields.status = "PENDING";
+      setFields.completedAt = null;
+    }
+
+    const updated = await Bill.findOneAndUpdate(
+      { _id: req.params.id, "payments._id": req.params.paymentId },
+      { $set: setFields },
+      { new: true }
+    );
+
+    res.json(updated);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: error.errors[0].message });
+      return;
+    }
     res.status(500).json({ error: "Server error" });
   }
 });
