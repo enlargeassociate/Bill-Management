@@ -13,7 +13,7 @@ import { BillStatusChart, MonthlyBillChart } from "@/components/dashboard/Charts
 import { BillTable } from "@/components/bills/BillTable";
 import { LoadingState } from "@/components/common/LoadingState";
 import { useBills } from "@/hooks/use-bills";
-import { formatINR, isOverdue } from "@/lib/format";
+import { formatINR, isOverdue, remainingAmount } from "@/lib/format";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
@@ -27,7 +27,7 @@ function DashboardPage() {
   const pending = bills.filter((b) => b.status === "PENDING" && !isOverdue(b));
   const overdue = bills.filter(isOverdue);
   const active = bills.filter((b) => b.status !== "COMPLETED");
-  const sum = (rows: typeof bills) => rows.reduce((t, b) => t + b.totalAmount, 0);
+  const sum = (rows: typeof bills) => rows.reduce((t, b) => t + remainingAmount(b), 0);
 
   return (
     <ProtectedPage title="Dashboard" subtitle="Overview of pending and overdue bills" adminOnly>
